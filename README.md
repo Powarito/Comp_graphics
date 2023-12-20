@@ -1,4 +1,4 @@
-#This is a repo for 'Computer graphics' university subject.
+# This is a repo for 'Computer graphics' university subject.
 
 Right now there are 2 projects in one Visual Studio solution:
 'Comp_graphics' is lab 1.
@@ -12,4 +12,5 @@ If I did screw up (sorry), then go to one of the project properties (guide for V
 Then in VC++ Directories:
 1) Include Directories: add '<your_path>\Comp_graphics\Libraries\include' without single brackets;
 2) Library Directories: add '<your_path>\Comp_graphics\Libraries\lib' without single brackets.
+
 Then go to Linker -> Input -> Additional Dependecies: add 'glfw3.lib;opengl32.lib;' without single brackets.
