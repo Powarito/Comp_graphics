@@ -28,6 +28,7 @@ Camera::Camera(
     WorldUp = glm::normalize(_worldUp);
     Yaw = _yaw;
     Pitch = _pitch;
+    isActive = true;
     updateCameraVectors();
 }
 
@@ -44,6 +45,7 @@ Camera::Camera(
     WorldUp = glm::normalize(glm::vec3(_worldUpX, _worldUpY, _worldUpZ));
     Yaw = _yaw;
     Pitch = _pitch;
+    isActive = true;
     updateCameraVectors();
 }
 
@@ -99,30 +101,34 @@ void Camera::ProcessKeyboard(Camera_Movement _direction, float _deltaTime) {
 
 // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 void Camera::ProcessMouseMovement(float _xOffset, float _yOffset, GLboolean _constrainPitch) {
-    _xOffset *= MouseSensitivity;
-    _yOffset *= MouseSensitivity;
+    if (isActive) {
+        _xOffset *= MouseSensitivity;
+        _yOffset *= MouseSensitivity;
 
-    Yaw += _xOffset;
-    Pitch += _yOffset;
+        Yaw += _xOffset;
+        Pitch += _yOffset;
 
-    // make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (_constrainPitch) {
-        if (Pitch > 89.999f)
-            Pitch = 89.999f;
-        if (Pitch < -89.999f)
-            Pitch = -89.999f;
+        // make sure that when pitch is out of bounds, screen doesn't get flipped
+        if (_constrainPitch) {
+            if (Pitch > 89.999f)
+                Pitch = 89.999f;
+            if (Pitch < -89.999f)
+                Pitch = -89.999f;
+        }
+
+        // update Front, Right and Up Vectors using the updated Euler angles
+        updateCameraVectors();
     }
-
-    // update Front, Right and Up Vectors using the updated Euler angles
-    updateCameraVectors();
 }
 
 // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 void Camera::ProcessMouseScroll(float _yOffset) {
-    Fov -= _yOffset;
+    if (isActive) {
+        Fov -= _yOffset;
 
-    if (Fov < cam::MIN_FOV)
-        Fov = cam::MIN_FOV;
-    if (Fov > cam::MAX_FOV)
-        Fov = cam::MAX_FOV;
+        if (Fov < cam::MIN_FOV)
+            Fov = cam::MIN_FOV;
+        if (Fov > cam::MAX_FOV)
+            Fov = cam::MAX_FOV;
+    }
 }

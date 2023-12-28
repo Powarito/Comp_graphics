@@ -35,6 +35,7 @@ private:
     float MovementSpeed;
     float MouseSensitivity;
     float Fov;
+    bool isActive;
 
 public:
     // camera attributes
@@ -50,13 +51,14 @@ public:
     inline float getMovementSpeed() { return MovementSpeed; } const
     inline float getMouseSensitivity() { return MouseSensitivity; } const
     inline float getFov() { return Fov; } const
+    inline bool getIsActive() { return isActive; } const
 
     // camera attributes
-    inline void setPosition(const glm::vec3 &_position) { Position = _position; }
-    inline void setFront(const glm::vec3 &_front) { Front = _front; }
-    inline void setUp(const glm::vec3 &_up) { Up = _up; }
-    inline void setRight(const glm::vec3 &_right) { Right = _right; }
-    inline void setWorldUp(const glm::vec3 &_worldUp) { WorldUp = _worldUp; }
+    inline void setPosition(const glm::vec3& _position) { Position = _position; }
+    inline void setFront(const glm::vec3& _front) { Front = _front; }
+    inline void setUp(const glm::vec3& _up) { Up = _up; }
+    inline void setRight(const glm::vec3& _right) { Right = _right; }
+    inline void setWorldUp(const glm::vec3& _worldUp) { WorldUp = _worldUp; }
     // Euler angles
     inline void setYaw(const float _yaw) { Yaw = _yaw; }
     inline void setPitch(const float _pitch) { Pitch = _pitch; }
@@ -64,18 +66,19 @@ public:
     inline void setMovementSpeed(const float _movementSpeed) { MovementSpeed = _movementSpeed; }
     inline void setMouseSensitivity(const float _mouseSensitivity) { MouseSensitivity = _mouseSensitivity; }
     inline void setFov(const float _fov) { Fov = _fov; }
+    inline void setIsActive(const bool _isActive) { isActive = _isActive; }
 
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors();
 
     // turn camera to look at given point in the world
-    void CameralootAt(const glm::vec3 &_lookAtPoint);
+    void CameralootAt(const glm::vec3& _lookAtPoint);
 
 
     // constructor with vectors
     Camera(
-        const glm::vec3 &_position = glm::vec3(0.0f, 0.0f, 0.0f),
-        const glm::vec3 &_worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
+        const glm::vec3& _position = glm::vec3(0.0f, 0.0f, 0.0f),
+        const glm::vec3& _worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
         float _yaw = cam::YAW,
         float _pitch = cam::PITCH
     );
