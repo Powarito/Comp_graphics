@@ -15,6 +15,7 @@
 
 #include "Cosmic.h"
 #include "CosmicValues.h"
+#include "Skybox.h"
 
 
 // Window
@@ -72,7 +73,9 @@ struct LightProperties {
 
 // Before moving and drawing cosmic object, you should first move its central object around which it rotates, and so on.
 // For example: move stars first, then planets around them, and then moons around these planets.
-void moveAndDrawCosmic(const ShaderProgram &shaderProgram, Cosmic &cosmic, Model *modelObj, float scaleObj = 1.0f);
+glm::mat4 moveCosmic(Cosmic &cosmic, float scaleObj = 1.0f);
+void      drawCosmic(const ShaderProgram &objectSP, const ShaderProgram &stencilSP, Model *modelObj, bool drawOutline = false);
+
 glm::vec3 getPerpendicularVector(const glm::vec3 &originalVector);
 void updateProjections();
 
@@ -113,11 +116,11 @@ int main() {
 		return -1;
 	}
 
-	glEnable(GL_DEPTH_TEST);
-
 	// Shaders
 	ShaderProgram starShaderProgram("res\\shaders\\starShader.vert", "res\\shaders\\starShader.frag");
 	ShaderProgram planetShaderProgram("res\\shaders\\planetShader.vert", "res\\shaders\\planetShader.frag");
+	ShaderProgram stencilShaderProgram("res\\shaders\\starShader.vert", "res\\shaders\\stencilShader.frag");
+	ShaderProgram skyboxShaderProgram("res\\shaders\\skyboxShader.vert", "res\\shaders\\skyboxShader.frag");
 	
 	// MOVEMENT INFO
 	// Stars, planets, moons and their movement information.
@@ -146,14 +149,14 @@ int main() {
 
 	// LIGHT COLOR INFO
 	float whitenessFactor = 0.60f;
-	float diff = 0.15f;
+	float diff = 0.10f;
 	float spec = 1.0f;
 	float shininess = 8.0f;
 
 	glm::vec3 lightColors[] = {
 		{ 255.0f / rgb,  213.0f / rgb,  77.0f / rgb },
 		{ 233.0f / rgb,  41.0f / rgb,  18.0f / rgb },
-		{ 66.0f / rgb,  211.0f / rgb,  255.0f / rgb },
+		{ 81.0f / rgb,  169.0f / rgb,  255.0f / rgb },
 	};
 	lightColors[0] = lightColors[0] * (1.0f - whitenessFactor) + whitenessFactor;
 	lightColors[1] = lightColors[1]/* * (1.0f - whitenessFactor) + whitenessFactor*/;
@@ -212,6 +215,38 @@ int main() {
 	float planetScales[] = { 1.0f * mul, 0.25f * mul, 1.0f * mul, 1.0f * mul, };
 	float moonScales[] = { 0.30f * mul, 0.35f * mul, 0.002f * mul, 0.002f * mul, 0.002f * mul, 0.002f * mul, 0.002f * mul, };
 
+	bool drawStarOutlines[] = { true, false, true };
+
+
+	// Skybox cubemap texture
+	std::string skyboxDir = "blue_sb";
+	std::vector<std::string> skyboxFaces {
+		"res\\skyboxes\\" + skyboxDir + "\\right.png",
+		"res\\skyboxes\\" + skyboxDir + "\\left.png",
+		"res\\skyboxes\\" + skyboxDir + "\\top.png",
+		"res\\skyboxes\\" + skyboxDir + "\\bottom.png",
+		"res\\skyboxes\\" + skyboxDir + "\\front.png",
+		"res\\skyboxes\\" + skyboxDir + "\\back.png"
+	};
+	unsigned int cubemapTexture = loadCubemap(skyboxFaces);
+
+	unsigned int skyboxVAO, skyboxVBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
+
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -224,16 +259,28 @@ int main() {
 
 		// Rendering clear commands
 		glClearColor(currBg[0], currBg[1], currBg[2], currBg[3]);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// Update projections
 		updateProjections();
 
 		// Objects
 		// Moving and drawing stars
-		starShaderProgram.use();
 		for (int i = 0; i < sizeof(starModels) / sizeof(Model*); ++i) {
-			moveAndDrawCosmic(starShaderProgram, stars[i], starModels[i], starScales[i]);
+			glm::mat4 model = moveCosmic(stars[i], starScales[i]);
+
+			starShaderProgram.use();
+			starShaderProgram.setMat4("model", model);
+			starShaderProgram.setMat4("view", camera.GetViewMatrix());
+			starShaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
+
+			stencilShaderProgram.use();
+			stencilShaderProgram.setMat4("model", glm::scale(model, glm::vec3(1.025f)));
+			stencilShaderProgram.setMat4("view", camera.GetViewMatrix());
+			stencilShaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
+			stencilShaderProgram.setVec3("ourColor", (lightColors[i] - whitenessFactor) / (1.0f - whitenessFactor));
+
+			drawCosmic(starShaderProgram, stencilShaderProgram, starModels[i], drawStarOutlines[i]);
 		}
 
 		planetShaderProgram.use();
@@ -262,13 +309,43 @@ int main() {
 
 		// Moving and drawing planets
 		for (int i = 0; i < sizeof(planetModels) / sizeof(Model*); ++i) {
-			moveAndDrawCosmic(planetShaderProgram, planets[i], planetModels[i], planetScales[i]);
+			glm::mat4 model = moveCosmic(planets[i], planetScales[i]);
+
+			planetShaderProgram.use();
+			planetShaderProgram.setMat4("model", model);
+			planetShaderProgram.setMat4("view", camera.GetViewMatrix());
+			planetShaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
+			planetShaderProgram.setMat3("NormalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
+
+			drawCosmic(planetShaderProgram, planetShaderProgram, planetModels[i]);
 		}
 
 		// Moving and drawing moons
 		for (int i = 0; i < sizeof(moonModels) / sizeof(Model*); ++i) {
-			moveAndDrawCosmic(planetShaderProgram, moons[i], moonModels[i], moonScales[i]);
+			glm::mat4 model = moveCosmic(moons[i], moonScales[i]);
+
+			planetShaderProgram.use();
+			planetShaderProgram.setMat4("model", model);
+			planetShaderProgram.setMat4("view", camera.GetViewMatrix());
+			planetShaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
+			planetShaderProgram.setMat3("NormalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
+
+			drawCosmic(planetShaderProgram, planetShaderProgram, moonModels[i]);
 		}
+
+		// Drawing skybox
+		glDepthFunc(GL_LEQUAL);
+		skyboxShaderProgram.use();
+		skyboxShaderProgram.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
+		skyboxShaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
+		skyboxShaderProgram.setInt("skybox", 0);
+
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
 
 		// Check and call events and swap the buffers
 		glfwSwapBuffers(window);
@@ -393,33 +470,42 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		camera.ProcessKeyboard(Camera::Camera_Movement::DOWN, tempDeltaTime);
 
+	// '[' and ']' keys - - decrease or increase camera sensitivity respectively.
+	// '\' key - set camera sensitivity to default.
+	if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS)
+		camera.setMouseSensitivity(camera.getMouseSensitivity() - 0.0002f);
+	if (glfwGetKey(window, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS)
+		camera.setMouseSensitivity(camera.getMouseSensitivity() + 0.0002f);
+	if (glfwGetKey(window, GLFW_KEY_BACKSLASH) == GLFW_PRESS)
+		camera.setMouseSensitivity(cam::SENSITIVITY);
+
+	// Check camera sensitivity boundaries.
+	if (camera.getMouseSensitivity() > 1.0f)
+		camera.setMouseSensitivity(1.0f);
+	if (camera.getMouseSensitivity() < 0.0f)
+		camera.setMouseSensitivity(0.0f);
+
 	// '-' and '+' keys - decrease or increase camera speed respectively.
+	// '0' key - set camera speed to default.
 	if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
 		camera.setMovementSpeed(camera.getMovementSpeed() + 0.1f);
 	if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
 		camera.setMovementSpeed(camera.getMovementSpeed() - 0.1f);
+	if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+		camera.setMovementSpeed(cam::SPEED);
 
 	// Check camera speed boundaries.
 	if (camera.getMovementSpeed() > 30.0f)
 		camera.setMovementSpeed(30.0f);
 	if (camera.getMovementSpeed() < 0.0f)
 		camera.setMovementSpeed(0.0f);
-
-	// '0' key - set camera speed to default.
-	if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
-		camera.setMovementSpeed(cam::SPEED);
-	}
 }
 
 
-void moveAndDrawCosmic(const ShaderProgram &shaderProgram, Cosmic &cosmic, Model *modelObj, float scaleObj) {
+glm::mat4 moveCosmic(Cosmic &cosmic, float scaleObj) {
 	glm::vec3 centerPos = { 0.0f, 0.0f, 0.0f };
 	if (cosmic.centralObject)
 		centerPos = { cosmic.centralObject->position };
-
-	float cenX = centerPos.x;
-	float cenY = centerPos.y;
-	float cenZ = centerPos.z;
 
 	float currTime = lastTime;
 	if (clockwiseRotate)
@@ -433,8 +519,8 @@ void moveAndDrawCosmic(const ShaderProgram &shaderProgram, Cosmic &cosmic, Model
 	// 6) Scale the cosmic object
 
 	glm::mat4 model = glm::mat4(1.0f);
-	/*  1) */ model = glm::translate(model, glm::vec3(cenX, cenY, cenZ));
-	/*  2) */ model = glm::rotate(model, currTime * cosmic.orbitSpeedRad, /*glm::vec3(0.0f, 1.0f, 0.0f)*/ cosmic.orbitAxis);
+	/*  1) */ model = glm::translate(model, glm::vec3(centerPos.x, centerPos.y, centerPos.z));
+	/*  2) */ model = glm::rotate(model, currTime * cosmic.orbitSpeedRad, cosmic.orbitAxis);
 	/*  3) */ model = glm::translate(model, cosmic.orbitRadius * getPerpendicularVector(cosmic.orbitAxis));
 
 	/*  4) */ cosmic.position = model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -442,13 +528,42 @@ void moveAndDrawCosmic(const ShaderProgram &shaderProgram, Cosmic &cosmic, Model
 	/*  5) */ model = glm::rotate(model, currTime * cosmic.spinSpeedRad, cosmic.spinAxis);
 	/*  6) */ model = glm::scale(model, glm::vec3(scaleObj));
 
-	shaderProgram.setMat4("model", model);
-	shaderProgram.setMat4("view", camera.GetViewMatrix());
-	shaderProgram.setMat4("projection", usedProj == 'P' ? pProj : oProj);
-	shaderProgram.setMat3("NormalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
-
-	modelObj->Draw(shaderProgram);
+	return model;
 }
+
+void drawCosmic(const ShaderProgram &objectSP, const ShaderProgram &stencilSP, Model *modelObj, bool drawOutline) {
+	if (!drawOutline) {
+		glStencilMask(0x00);
+
+		objectSP.use();
+		modelObj->Draw(objectSP);
+	}
+	else {
+		// Every fragment which was affected by drawing the object will fill stencil buffer with ones
+		// at the same positions where those fragments were drawn
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+
+		objectSP.use();
+		modelObj->Draw(objectSP);
+
+		// Then we draw the same object (don't forget to scale it outside the function body by passing it to stencilSP shader program)
+		// in the same place, but only those fragments, where stencil buffer doesn't have ones,
+		// so that we don't overdraw our object.
+		// Also disable writing to the stencil buffer during rendering outline
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+
+		stencilSP.use();
+		modelObj->Draw(stencilSP);
+
+		// Finally, we clear stencil buffer with zeros
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
+		glStencilMask(0xFF);
+		glClear(GL_STENCIL_BUFFER_BIT);
+	}
+}
+
 
 glm::vec3 getPerpendicularVector(const glm::vec3 &originalVector) {
 	// An arbitrary vector supposed to not be parallel to the originalVector

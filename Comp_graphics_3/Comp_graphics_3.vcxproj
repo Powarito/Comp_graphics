@@ -147,6 +147,7 @@
     <ClCompile Include="..\Libraries\source\stb_image.cpp" />
     <ClCompile Include="CosmicValues.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libraries\include\auxiliary\Camera.h" />
@@ -155,13 +156,16 @@
     <ClInclude Include="..\Libraries\include\auxiliary\ShaderProgram.h" />
     <ClInclude Include="Cosmic.h" />
     <ClInclude Include="CosmicValues.h" />
+    <ClInclude Include="Skybox.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\Learn_OpenGL\res\shaders\ModelMultilights.frag" />
     <None Include="res\shaders\planetShader.frag" />
     <None Include="res\shaders\planetShader.vert" />
+    <None Include="res\shaders\skyboxShader.frag" />
+    <None Include="res\shaders\skyboxShader.vert" />
     <None Include="res\shaders\starShader.frag" />
     <None Include="res\shaders\starShader.vert" />
+    <None Include="res\shaders\stencilShader.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

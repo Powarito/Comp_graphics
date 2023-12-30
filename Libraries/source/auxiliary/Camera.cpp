@@ -6,7 +6,7 @@ namespace cam {
     extern float YAW = -90.0f;
     extern float PITCH = 0.0f;
     extern float SPEED = 5.0f;
-    extern float SENSITIVITY = 0.1f;
+    extern float SENSITIVITY = 0.05f;
     extern float DEF_FOV = 45.0f;
     extern float MIN_FOV = 0.5f;
     extern float MAX_FOV = 90.0f;

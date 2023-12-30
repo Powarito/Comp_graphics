@@ -2,7 +2,7 @@
 
 
 void Model::Draw(const ShaderProgram &shaderProgram) {
-    //shaderProgram.use();
+    shaderProgram.use();
 
     for (unsigned int i = 0; i < meshes.size(); ++i)
         meshes[i].Draw(shaderProgram);

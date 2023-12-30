@@ -43,7 +43,7 @@ float moonSpinSpeed[] = {
 float starOrbitSpeed[] = {
 	glm::radians(0.0f),
 	glm::radians(50.0f),
-	glm::radians(30.0f),
+	glm::radians(25.0f),
 };
 float planetOrbitSpeed[] = {
 	glm::radians(35.0f),
