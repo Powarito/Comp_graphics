@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{e7da6429-7eea-4c8f-8369-c2297ce4e580}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{fe0cc28e-eafc-4edc-b356-8c01b9fa8d85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\math">
+      <UniqueIdentifier>{28d96e90-5f25-4479-ba36-f1adf6ff0597}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\geometry">
+      <UniqueIdentifier>{114b2eb4-d36f-42e0-b19b-110b3c789fb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{3e8adfa1-d66e-420b-bd37-cb81f955626d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{98869143-bcba-4346-99e8-07afd1f5278b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\source\auxiliary\ShaderProgram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\source\glad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\App.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_demo.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_impl_opengl3.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_tables.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_widgets.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_impl_glfw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Libraries\include\auxiliary\ShaderProgram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\App.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Renderer.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry\GenerateGrid.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Transforms.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry\GenerateTrochoid.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imconfig.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_opengl3.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_rectpack.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_textedit.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_truetype.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_opengl3_loader.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_glfw.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\shaders\shader.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="resources\shaders\shader.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
