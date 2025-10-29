@@ -25,6 +25,7 @@ private:
 
     void updateTrochoidBuffer();
     void updateGridBuffer();
+    void updatePointsBuffer();
 
     void ImGuiNewFrame();
     void renderScene();
@@ -60,15 +61,19 @@ private:
         float       tMax;
         float       dt;
     };
-    TrochoidParameters trochoidParams;
+    TrochoidParameters  trochoidParams;
 
     ShaderProgram*  shader;
-    RenderData      gridRenderData, axesRenderData, trochoidRenderData;
+    RenderData      gridRenderData, axesRenderData, trochoidRenderData, 
+                    pointsFigureRenderData, pointsBasisRenderData;
+
+    std::vector<float>  pointsFigureVertices, pointsBasisVertices;
 
     glm::vec3       bgColor;
     glm::vec3       gridColor;
     glm::vec3       axisXColor;
     glm::vec3       axisYColor;
     glm::vec3       trochoidColor;
+    glm::vec3       rotatePointColor;
 };
 

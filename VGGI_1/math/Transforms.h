@@ -65,8 +65,8 @@ inline glm::mat4 mirrorAroundPoint2D(
 
 // Scale a 2D object relative to an arbitrary point
 inline glm::mat4 scaleAroundPoint2D(
-    const glm::vec2& scale,
-    const glm::vec2& scalePoint
+    const glm::vec2&    scale,
+    const glm::vec2&    scalePoint
 ) {
     glm::mat4 model(1.0f);
 

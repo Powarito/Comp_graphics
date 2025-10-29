@@ -34,6 +34,7 @@ App::App(unsigned int width, unsigned int height) {
     axisXColor          = { 1.0f, 0.0f, 0.0f };
     axisYColor          = { 0.0f, 1.0f, 0.0f };
     trochoidColor       = { 0.9f, 0.2f, 1.0f };
+    rotatePointColor    = { 1.0f, 0.8f, 0.2f };
 
     initGL();
     initImGui();
@@ -117,9 +118,23 @@ void App::initBuffers() {
         trochoidColor
     );
 
-    gridRenderData     = Renderer::createRenderData(gridVertices, 1.0f);
-    axesRenderData     = Renderer::createRenderData(axesVertices, 3.0f);
-    trochoidRenderData = Renderer::createRenderData(trochoidVertices, 3.0f);
+    auto add = [&](std::vector<float>& verts, const glm::vec2& p, const glm::vec3& c) {
+        verts.insert(verts.end(), { p.x, p.y, c.r, c.g, c.b });
+        };
+
+    pointsFigureVertices.reserve(2 * 5);
+    pointsBasisVertices.reserve(3 * 5);
+    add(pointsFigureVertices, figurePosition, trochoidColor);
+    add(pointsFigureVertices, rotatePoint,    rotatePointColor);
+    add(pointsBasisVertices,  O,              gridColor);
+    add(pointsBasisVertices,  X,              axisXColor);
+    add(pointsBasisVertices,  Y,              axisYColor);
+
+    gridRenderData         = Renderer::createRenderData(gridVertices,           GL_LINES,       1.0f,   GL_STATIC_DRAW);
+    axesRenderData         = Renderer::createRenderData(axesVertices,           GL_LINES,       3.0f,   GL_STATIC_DRAW);
+    trochoidRenderData     = Renderer::createRenderData(trochoidVertices,       GL_LINE_STRIP,  3.0f,   GL_STATIC_DRAW);
+    pointsFigureRenderData = Renderer::createRenderData(pointsFigureVertices,   GL_POINTS,      10.0f,  GL_DYNAMIC_DRAW);
+    pointsBasisRenderData  = Renderer::createRenderData(pointsBasisVertices,    GL_POINTS,      10.0f,  GL_DYNAMIC_DRAW);
 }
 
 void App::updateTrochoidBuffer() {
@@ -130,7 +145,7 @@ void App::updateTrochoidBuffer() {
     );
 
     trochoidRenderData.vertexCount = trochoidVertices.size() / 5;
-    // Do we need to bind VAO here?
+
     glBindBuffer(GL_ARRAY_BUFFER, trochoidRenderData.VBO);
     glBufferData(GL_ARRAY_BUFFER, trochoidVertices.size() * sizeof(float), trochoidVertices.data(), GL_STATIC_DRAW);
 }
@@ -146,6 +161,24 @@ void App::updateGridBuffer() {
     glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(float), gridVertices.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, axesRenderData.VBO);
     glBufferData(GL_ARRAY_BUFFER, axesVertices.size() * sizeof(float), axesVertices.data(), GL_STATIC_DRAW);
+}
+
+void App::updatePointsBuffer() {
+    auto update = [&](std::vector<float>& verts, const glm::vec2& newP, std::size_t idx) {
+        verts[idx * 5]      = newP.x;
+        verts[idx * 5 + 1]  = newP.y;
+        };
+
+    update(pointsFigureVertices, figurePosition,  0);
+    update(pointsFigureVertices, rotatePoint,     1);
+    update(pointsBasisVertices,  O,               0);
+    update(pointsBasisVertices,  X,               1);
+    update(pointsBasisVertices,  Y,               2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, pointsFigureRenderData.VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, pointsFigureVertices.size() * sizeof(float), pointsFigureVertices.data());
+    glBindBuffer(GL_ARRAY_BUFFER, pointsBasisRenderData.VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, pointsBasisVertices.size()  * sizeof(float), pointsBasisVertices.data());
 }
 
 void App::ImGuiNewFrame() {
@@ -172,13 +205,21 @@ void App::renderScene() {
 
     // Grid and axes
     shader->setMat4("rawModel", glm::mat4(1.0f));
-    Renderer::Draw(*shader, gridRenderData, GL_LINES);
-    Renderer::Draw(*shader, axesRenderData, GL_LINES);
+    Renderer::Draw(*shader, gridRenderData);
+    Renderer::Draw(*shader, axesRenderData);
+
+    // Points
+    // We need to draw O, X and Y before using affineBasis, but the Figure points - after using that matrix
+    shader->setMat4("affineBasis", glm::mat4(1.0f));
+    Renderer::Draw(*shader, pointsBasisRenderData);
+
+    shader->setMat4("affineBasis", affineBasis);
+    Renderer::Draw(*shader, pointsFigureRenderData);
 
     // Trochoid
     glm::mat4 trochoidModel = computeTransformMatrix(figurePositionBase, rotatePoint, angleDegrees, scale, isMirrored, isMirrored);
     shader->setMat4("rawModel", trochoidModel);
-    Renderer::Draw(*shader, trochoidRenderData, GL_LINE_STRIP);
+    Renderer::Draw(*shader, trochoidRenderData);
 
     figurePosition = computeRotatedPosition(figurePositionBase, rotatePoint, angleDegrees);
 }
@@ -189,31 +230,39 @@ void App::renderUI() {
     // Trochoid params
     if (ImGui::CollapsingHeader("Trochoid Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool changed = false;
-        changed |= ImGui::DragFloat("r", &trochoidParams.r, 0.01f, 0.1f, 10.0f);
-        changed |= ImGui::DragFloat("h", &trochoidParams.h, 0.01f, 0.0f, 10.0f);
-        changed |= ImGui::DragFloat("tMax", &trochoidParams.tMax, 0.1f, 1.0f, 100.0f);
-        changed |= ImGui::DragFloat("dt", &trochoidParams.dt, 0.001f, 0.001f, 0.1f);
+        changed |= ImGui::DragFloat("r",    &trochoidParams.r,      0.01f,  0.1f,   10.0f);
+        changed |= ImGui::DragFloat("h",    &trochoidParams.h,      0.01f,  0.0f,   10.0f);
+        changed |= ImGui::DragFloat("tMax", &trochoidParams.tMax,   0.1f,   1.0f,   100.0f);
+        changed |= ImGui::DragFloat("dt",   &trochoidParams.dt,     0.01f,  0.001f, 2.0f);
         if (changed) {
             updateTrochoidBuffer();
         }
     }
 
+    bool changedPoints = false;
+
     // Euclidean transforms
     if (ImGui::CollapsingHeader("Euclidean Transformations", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::DragFloat2("Figure position", glm::value_ptr(figurePosition), 0.1f)) {
+        bool changedPosition = ImGui::DragFloat2("Figure Position", glm::value_ptr(figurePosition), 0.1f);
+        if (changedPosition) {
             figurePositionBase = computeRotatedPosition(figurePosition, rotatePoint, -angleDegrees);
         }
-        ImGui::DragFloat2("Rotate point", glm::value_ptr(rotatePoint), 0.1f);
-        ImGui::DragFloat("Angle (deg)", &angleDegrees, 0.5f, -360.0f, 360.0f);
+        changedPoints   |= changedPosition;
+        changedPoints   |= ImGui::DragFloat2("Rotate Point", glm::value_ptr(rotatePoint), 0.1f);
+        changedPoints   |= ImGui::DragFloat("Angle (deg)", &angleDegrees, 0.5f, -360.0f, 360.0f);
     }
 
     // Affine transformations
     if (ImGui::CollapsingHeader("Affine Transformations", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat2("O", glm::value_ptr(O), 0.1f);
-        ImGui::DragFloat2("X", glm::value_ptr(X), 0.1f);
-        ImGui::DragFloat2("Y", glm::value_ptr(Y), 0.1f);
+        changedPoints |= ImGui::DragFloat2("O", glm::value_ptr(O), 0.1f);
+        changedPoints |= ImGui::DragFloat2("X", glm::value_ptr(X), 0.1f);
+        changedPoints |= ImGui::DragFloat2("Y", glm::value_ptr(Y), 0.1f);
         ImGui::DragFloat2("Scale", glm::value_ptr(scale), 0.01f, 0.1f, 10.0f);
         ImGui::Checkbox("Is Mirrored", &isMirrored);
+    }
+
+    if (changedPoints) {
+        updatePointsBuffer();
     }
 
     // Grid
@@ -222,6 +271,7 @@ void App::renderUI() {
         if (ImGui::DragInt("Grid size", (int*)&gridNum, 1, 2, 50)) {
             updateGridBuffer();
         }
+        ImGui::DragFloat2("Grid Offset (px)", glm::value_ptr(origin), 1.0f);
     }
 
     ImGui::End();
