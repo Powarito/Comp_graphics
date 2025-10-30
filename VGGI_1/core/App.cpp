@@ -3,42 +3,16 @@
 #include "ImGui/imgui_impl_glfw.h"
 #include "ImGui/imgui_impl_opengl3.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <limits>
 
 App::App(unsigned int width, unsigned int height) {
-    this->width         = width;
-    this->height        = height;
-    window              = nullptr;
-    origin              = { 150.0f, 150.0f };
-    pixelsPerUnit       = 50.0f;
-    gridNum             = 20;
-    shader              = nullptr;
-
-    figurePositionBase  = { 5.0f, 5.0f};
-    figurePosition      = figurePositionBase;
-    rotatePoint         = { 1.0f, 1.0f };
-    angleDegrees        = 0.0f;
-    scale               = { 1.0f, 1.0f };
-    isMirrored          = false;
-
-    O                   = { 0.0f, 0.0f };
-    X                   = { 1.0f, 0.0f };
-    Y                   = { 0.0f, 1.0f };
-
-    trochoidParams.r    = 1.0f;
-    trochoidParams.h    = 1.0f;
-    trochoidParams.tMax = 25.0f;
-    trochoidParams.dt   = 0.01f;
-
-    bgColor             = { 1.0f, 1.0f, 1.0f };
-    gridColor           = { 0.75f, 0.75f, 0.75f };
-    axisXColor          = { 1.0f, 0.0f, 0.0f };
-    axisYColor          = { 0.0f, 1.0f, 0.0f };
-    trochoidColor       = { 0.9f, 0.2f, 1.0f };
-    rotatePointColor    = { 1.0f, 0.8f, 0.2f };
+    this->width     = width;
+    this->height    = height;
 
     initGL();
     initImGui();
     initBuffers();
+    initDraggablePoints();
 }
 
 App::~App() {
@@ -122,8 +96,11 @@ void App::initBuffers() {
         verts.insert(verts.end(), { p.x, p.y, c.r, c.g, c.b });
         };
 
+    std::vector<float> pointsFigureVertices;
+    std::vector<float> pointsBasisVertices;
     pointsFigureVertices.reserve(2 * 5);
     pointsBasisVertices.reserve(3 * 5);
+
     add(pointsFigureVertices, figurePosition, trochoidColor);
     add(pointsFigureVertices, rotatePoint,    rotatePointColor);
     add(pointsBasisVertices,  O,              gridColor);
@@ -135,6 +112,23 @@ void App::initBuffers() {
     trochoidRenderData     = Renderer::createRenderData(trochoidVertices,       GL_LINE_STRIP,  3.0f,   GL_STATIC_DRAW);
     pointsFigureRenderData = Renderer::createRenderData(pointsFigureVertices,   GL_POINTS,      10.0f,  GL_DYNAMIC_DRAW);
     pointsBasisRenderData  = Renderer::createRenderData(pointsBasisVertices,    GL_POINTS,      10.0f,  GL_DYNAMIC_DRAW);
+}
+
+void App::initDraggablePoints() {
+    draggablePoints.clear();
+
+    draggablePoints.emplace_back(&O, gridColor, false);
+    draggablePoints.emplace_back(&X, axisXColor, false);
+    draggablePoints.emplace_back(&Y, axisYColor, false);
+
+    draggablePoints.emplace_back(
+        &figurePosition, trochoidColor, true,
+        [this]() {
+            figurePositionBase = computeRotatedPosition(figurePosition, rotatePoint, -angleDegrees);
+        }
+    );
+
+    draggablePoints.emplace_back(&rotatePoint, rotatePointColor, true);
 }
 
 void App::updateTrochoidBuffer() {
@@ -164,21 +158,73 @@ void App::updateGridBuffer() {
 }
 
 void App::updatePointsBuffer() {
-    auto update = [&](std::vector<float>& verts, const glm::vec2& newP, std::size_t idx) {
-        verts[idx * 5]      = newP.x;
-        verts[idx * 5 + 1]  = newP.y;
+    auto add = [&](std::vector<float>& verts, const glm::vec2& p, const glm::vec3& c) {
+        verts.insert(verts.end(), { p.x, p.y, c.r, c.g, c.b });
         };
 
-    update(pointsFigureVertices, figurePosition,  0);
-    update(pointsFigureVertices, rotatePoint,     1);
-    update(pointsBasisVertices,  O,               0);
-    update(pointsBasisVertices,  X,               1);
-    update(pointsBasisVertices,  Y,               2);
+    std::vector<float> pointsFigureVertices;
+    std::vector<float> pointsBasisVertices;
+    pointsFigureVertices.reserve(2 * 5);
+    pointsBasisVertices.reserve(3 * 5);
+
+    add(pointsFigureVertices, figurePosition, trochoidColor);
+    add(pointsFigureVertices, rotatePoint, rotatePointColor);
+    add(pointsBasisVertices, O, gridColor);
+    add(pointsBasisVertices, X, axisXColor);
+    add(pointsBasisVertices, Y, axisYColor);
 
     glBindBuffer(GL_ARRAY_BUFFER, pointsFigureRenderData.VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, pointsFigureVertices.size() * sizeof(float), pointsFigureVertices.data());
     glBindBuffer(GL_ARRAY_BUFFER, pointsBasisRenderData.VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, pointsBasisVertices.size()  * sizeof(float), pointsBasisVertices.data());
+}
+
+void App::updateDraggablePoints() {
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    if (mousePressed && !isDragging) {
+        const float pickRadius = 10.0f / pixelsPerUnit;
+
+        glm::vec2 mouseWorldNoAffine = screenToWorld(mouseX, mouseY, false);
+        glm::vec2 mouseWorldAffine = screenToWorld(mouseX, mouseY, true);
+
+        float minDist = std::numeric_limits<float>::max();
+        int pickedIdx = -1;
+        glm::vec2 pickedOffset;
+
+        for (int i = 0; i < draggablePoints.size(); ++i) {
+            auto& dp = draggablePoints[i];
+            glm::vec2 target = dp.useAffine ? mouseWorldAffine : mouseWorldNoAffine;
+            float dist = glm::length(target - *dp.position);
+
+            if (dist < pickRadius && dist < minDist) {
+                pickedIdx = i;
+                pickedOffset = target - *dp.position;
+                minDist = dist;
+            }
+        }
+
+        if (pickedIdx >= 0) {
+            isDragging = true;
+            draggedPointIdx = pickedIdx;
+            dragOffset = pickedOffset;
+        }
+    }
+    else if (!mousePressed) {
+        isDragging = false;
+        draggedPointIdx = -1;
+    }
+
+    if (isDragging && draggedPointIdx != -1) {
+        auto& dp = draggablePoints[draggedPointIdx];
+        glm::vec2 mouseWorld = screenToWorld(mouseX, mouseY, dp.useAffine);
+        *dp.position = mouseWorld - dragOffset;
+
+        if (dp.onUpdate) dp.onUpdate();
+        updatePointsBuffer();
+    }
 }
 
 void App::ImGuiNewFrame() {
@@ -193,10 +239,10 @@ void App::renderScene() {
 
     shader->use();
 
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height));
-    glm::mat4 moveOrigin = glm::translate(glm::mat4(1.0f), glm::vec3(origin, 0.0f));
-    glm::mat4 scaleToPixels = glm::scale(glm::mat4(1.0f), glm::vec3(pixelsPerUnit, pixelsPerUnit, 1.0f));
-    glm::mat4 affineBasis = buildAffineBasis2D(O, X, Y);
+    projection = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height));
+    moveOrigin = glm::translate(glm::mat4(1.0f), glm::vec3(origin, 0.0f));
+    scaleToPixels = glm::scale(glm::mat4(1.0f), glm::vec3(pixelsPerUnit, pixelsPerUnit, 1.0f));
+    affineBasis = buildAffineBasis2D(O, X, Y);
 
     shader->setMat4("projection", projection);
     shader->setMat4("moveOrigin", moveOrigin);
@@ -290,9 +336,27 @@ void App::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void App::processInput(GLFWwindow* window) {
+    // Keyboard
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+
+    // Mouse
+    updateDraggablePoints();
+}
+
+glm::vec2 App::screenToWorld(double mouseX, double mouseY, bool useAffine) {
+    mouseY = height - mouseY;
+
+    glm::mat4 transform = moveOrigin * scaleToPixels;
+    if (useAffine) {
+        transform *= affineBasis;
+    }
+
+    glm::mat4 inv = glm::inverse(transform);
+
+    glm::vec4 world = inv * glm::vec4(mouseX, mouseY, 0.0f, 1.0f);
+    return glm::vec2(world.x, world.y);
 }
 
 void App::terminateGL()

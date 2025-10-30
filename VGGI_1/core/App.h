@@ -10,6 +10,7 @@
 #include "../geometry/GenerateGrid.h"
 #include "../geometry/GenerateTrochoid.h"
 #include "../math/Transforms.h"
+#include <functional>
 
 class App {
 public:
@@ -22,10 +23,12 @@ private:
     void initGL();
     void initImGui();
     void initBuffers();
+    void initDraggablePoints();
 
     void updateTrochoidBuffer();
     void updateGridBuffer();
     void updatePointsBuffer();
+    void updateDraggablePoints();
 
     void ImGuiNewFrame();
     void renderScene();
@@ -33,47 +36,87 @@ private:
     
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     void processInput(GLFWwindow* window);
+    glm::vec2 screenToWorld(double mouseX, double mouseY, bool useAffine);
 
     void terminateGL();
     void terminateImGui();
 
-    GLFWwindow*     window;
-    unsigned int    width, height;
+private:
+    // Program status
+    GLFWwindow*     window              = nullptr;
+    unsigned int    width               = 1280;
+    unsigned int    height              = 720;
+    bool            isDragging          = false;
+    int             draggedPointIdx     = -1;
+    glm::vec2       dragOffset          = { 0.0f, 0.0f };
 
-    glm::vec2       origin;
-    float           pixelsPerUnit;
-    std::size_t     gridNum;
+    // Grid graphic parameters
+    glm::vec2       origin              = { 150.0f, 150.0f };;
+    float           pixelsPerUnit       = 50.0f;
+    std::size_t     gridNum             = 20;
 
-    glm::vec2       figurePositionBase;
-    glm::vec2       figurePosition;
-    glm::vec2       rotatePoint;
-    float           angleDegrees;
-    glm::vec2       scale;
-    bool            isMirrored;
+    // Geometry and Transformations
+    glm::vec2       O                   = { 0.0f, 0.0f };
+    glm::vec2       X                   = { 1.0f, 0.0f };
+    glm::vec2       Y                   = { 0.0f, 1.0f };
 
-    glm::vec2       O;
-    glm::vec2       X;
-    glm::vec2       Y;
+    glm::vec2       figurePositionBase  = { 3.0f, 2.0f};
+    glm::vec2       figurePosition      = figurePositionBase;
+    glm::vec2       rotatePoint         = { 1.0f, 1.0f };
+    float           angleDegrees        = 0.0f;
+    glm::vec2       scale               = { 1.0f, 1.0f };
+    bool            isMirrored          = false;
 
-    struct TrochoidParameters {
-        float       r;
-        float       h;
-        float       tMax;
-        float       dt;
+    // Draggable Points
+    struct DraggablePoint {
+        glm::vec2*                  position;
+        glm::vec3                   color;
+        bool                        useAffine;
+        std::function<void()>       onUpdate;
+
+        DraggablePoint(
+            glm::vec2*              position,
+            glm::vec3               color,
+            bool                    useAffine   = true,
+            std::function<void()>   callback    = nullptr
+        )
+            : position(position)
+            , color(color)
+            , useAffine(useAffine)
+            , onUpdate(callback)
+        {}
     };
-    TrochoidParameters  trochoidParams;
+    std::vector<DraggablePoint>     draggablePoints;
 
-    ShaderProgram*  shader;
-    RenderData      gridRenderData, axesRenderData, trochoidRenderData, 
-                    pointsFigureRenderData, pointsBasisRenderData;
+    // Figure - Trochoid
+    struct TrochoidParameters {
+        float       r                   = 1.0f;
+        float       h                   = 1.0f;
+        float       tMax                = 25.0f;
+        float       dt                  = 0.01f;
+    };
+    TrochoidParameters              trochoidParams;
 
-    std::vector<float>  pointsFigureVertices, pointsBasisVertices;
+    // Colors
+    glm::vec3       bgColor             = { 1.0f, 1.0f, 1.0f };
+    glm::vec3       gridColor           = { 0.75f, 0.75f, 0.75f };
+    glm::vec3       axisXColor          = { 1.0f, 0.0f, 0.0f };
+    glm::vec3       axisYColor          = { 0.0f, 1.0f, 0.0f };
+    glm::vec3       trochoidColor       = { 0.9f, 0.2f, 1.0f };
+    glm::vec3       rotatePointColor    = { 1.0f, 0.8f, 0.2f };
 
-    glm::vec3       bgColor;
-    glm::vec3       gridColor;
-    glm::vec3       axisXColor;
-    glm::vec3       axisYColor;
-    glm::vec3       trochoidColor;
-    glm::vec3       rotatePointColor;
+    // Transformation Matrices
+    glm::mat4       projection;
+    glm::mat4       moveOrigin;
+    glm::mat4       scaleToPixels;
+    glm::mat4       affineBasis;
+
+    // GPU resources
+    ShaderProgram*  shader              = nullptr;
+    RenderData      gridRenderData;
+    RenderData      axesRenderData;
+    RenderData      trochoidRenderData;
+    RenderData      pointsFigureRenderData;
+    RenderData      pointsBasisRenderData;
 };
 
