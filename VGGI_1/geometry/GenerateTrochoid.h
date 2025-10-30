@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 
-// Генерує параметричну криву трохоїди
+// Generates a parametric trochoid curve
 inline std::vector<float> generateTrochoidVertices(
     float               r,          // radius of a circle
     float               h,          // distance of a point from the center of a circle

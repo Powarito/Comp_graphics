@@ -29,6 +29,8 @@ private:
     void updateGridBuffer();
     void updatePointsBuffer();
     void updateDraggablePoints();
+    void processPanning();
+    bool processUIWantCaptureMouse();
 
     void ImGuiNewFrame();
     void renderScene();
@@ -46,9 +48,14 @@ private:
     GLFWwindow*     window              = nullptr;
     unsigned int    width               = 1280;
     unsigned int    height              = 720;
+
     bool            isDragging          = false;
     int             draggedPointIdx     = -1;
     glm::vec2       dragOffset          = { 0.0f, 0.0f };
+
+    bool            isPanning           = false;
+    glm::vec2       panStartMouse;
+    glm::vec2       panStartOrigin;
 
     // Grid graphic parameters
     glm::vec2       origin              = { 150.0f, 150.0f };;
@@ -83,7 +90,7 @@ private:
             : position(position)
             , color(color)
             , useAffine(useAffine)
-            , onUpdate(callback)
+            , onUpdate(std::move(callback))
         {}
     };
     std::vector<DraggablePoint>     draggablePoints;

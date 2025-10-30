@@ -227,6 +227,40 @@ void App::updateDraggablePoints() {
     }
 }
 
+void App::processPanning() {
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    mouseY = height - mouseY;
+
+    bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    if (!isDragging) {
+        if (mousePressed && !isPanning) {
+            isPanning = true;
+            panStartMouse = glm::vec2(mouseX, mouseY);
+            panStartOrigin = origin;
+        }
+        else if (!mousePressed && isPanning) {
+            isPanning = false;
+        }
+
+        if (isPanning) {
+            glm::vec2 mouseDelta = glm::vec2(mouseX, mouseY) - panStartMouse;
+            origin = panStartOrigin + mouseDelta;
+        }
+    }
+}
+
+bool App::processUIWantCaptureMouse() {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse) {
+        isDragging = false;
+        isPanning = false;
+        return true;
+    }
+    return false;
+}
+
 void App::ImGuiNewFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -314,7 +348,7 @@ void App::renderUI() {
     // Grid
     if (ImGui::CollapsingHeader("Grid Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat("Pixels per Unit", &pixelsPerUnit, 1.0f, 10.0f, 200.0f);
-        if (ImGui::DragInt("Grid size", (int*)&gridNum, 1, 2, 50)) {
+        if (ImGui::DragInt("Grid Size", (int*)&gridNum, 1, 2, 50)) {
             updateGridBuffer();
         }
         ImGui::DragFloat2("Grid Offset (px)", glm::value_ptr(origin), 1.0f);
@@ -342,7 +376,10 @@ void App::processInput(GLFWwindow* window) {
     }
 
     // Mouse
-    updateDraggablePoints();
+    if (processUIWantCaptureMouse() == false) {
+        updateDraggablePoints();
+        processPanning();
+    }
 }
 
 glm::vec2 App::screenToWorld(double mouseX, double mouseY, bool useAffine) {
