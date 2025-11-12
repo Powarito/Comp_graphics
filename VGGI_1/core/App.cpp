@@ -55,6 +55,9 @@ void App::initGL() {
 
     glfwMakeContextCurrent(window);
     glfwSetWindowUserPointer(window, this);
+    glfwSetScrollCallback(window, [](GLFWwindow* w, double xOffset, double yOffset) {
+        static_cast<App*>(glfwGetWindowUserPointer(w))->onScroll(yOffset);
+        });
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -227,40 +230,6 @@ void App::updateDraggablePoints() {
     }
 }
 
-void App::processPanning() {
-    double mouseX, mouseY;
-    glfwGetCursorPos(window, &mouseX, &mouseY);
-
-    mouseY = height - mouseY;
-
-    bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-    if (!isDragging) {
-        if (mousePressed && !isPanning) {
-            isPanning = true;
-            panStartMouse = glm::vec2(mouseX, mouseY);
-            panStartOrigin = origin;
-        }
-        else if (!mousePressed && isPanning) {
-            isPanning = false;
-        }
-
-        if (isPanning) {
-            glm::vec2 mouseDelta = glm::vec2(mouseX, mouseY) - panStartMouse;
-            origin = panStartOrigin + mouseDelta;
-        }
-    }
-}
-
-bool App::processUIWantCaptureMouse() {
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureMouse) {
-        isDragging = false;
-        isPanning = false;
-        return true;
-    }
-    return false;
-}
-
 void App::ImGuiNewFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -380,6 +349,58 @@ void App::processInput(GLFWwindow* window) {
         updateDraggablePoints();
         processPanning();
     }
+}
+
+void App::onScroll(double yOffset) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse) {
+        return;
+    }
+
+    const float zoomFactor = 1.1f;
+
+    if (yOffset > 0) {
+        pixelsPerUnit *= zoomFactor;
+    }
+    else if (yOffset < 0) {
+        pixelsPerUnit /= zoomFactor;
+    }
+
+    pixelsPerUnit = std::max(pixelsPerUnit, 0.0001f);
+}
+
+void App::processPanning() {
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    mouseY = height - mouseY;
+
+    bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    if (!isDragging) {
+        if (mousePressed && !isPanning) {
+            isPanning = true;
+            panStartMouse = glm::vec2(mouseX, mouseY);
+            panStartOrigin = origin;
+        }
+        else if (!mousePressed && isPanning) {
+            isPanning = false;
+        }
+
+        if (isPanning) {
+            glm::vec2 mouseDelta = glm::vec2(mouseX, mouseY) - panStartMouse;
+            origin = panStartOrigin + mouseDelta;
+        }
+    }
+}
+
+bool App::processUIWantCaptureMouse() {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse) {
+        isDragging = false;
+        isPanning = false;
+        return true;
+    }
+    return false;
 }
 
 glm::vec2 App::screenToWorld(double mouseX, double mouseY, bool useAffine) {

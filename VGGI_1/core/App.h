@@ -29,8 +29,6 @@ private:
     void updateGridBuffer();
     void updatePointsBuffer();
     void updateDraggablePoints();
-    void processPanning();
-    bool processUIWantCaptureMouse();
 
     void ImGuiNewFrame();
     void renderScene();
@@ -38,6 +36,9 @@ private:
     
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     void processInput(GLFWwindow* window);
+    void onScroll(double yOffset);
+    void processPanning();
+    bool processUIWantCaptureMouse();
     glm::vec2 screenToWorld(double mouseX, double mouseY, bool useAffine);
 
     void terminateGL();

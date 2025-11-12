@@ -10,7 +10,7 @@
 
 
 namespace sp {
-	constexpr size_t logSize = 1024;
+	constexpr std::size_t logSize = 1024;
 }
 
 
