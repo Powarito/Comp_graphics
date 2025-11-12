@@ -245,8 +245,8 @@ void App::updateDraggablePoints() {
         for (int i = 0; i < draggablePoints.size(); ++i) {
             auto& dp = draggablePoints[i];
 
-            // Transform the point position and convert to screen pixels for distance comparison
-            glm::vec2 pointTransformed = worldToTransformed(*dp.position);
+            // Transform the point position (unless it's rotatePoint) and convert to screen pixels for distance comparison
+            glm::vec2 pointTransformed = i == 0 ? *dp.position : worldToTransformed(*dp.position);
             glm::vec4 pointScreen4 = moveOrigin * scaleToPixels * glm::vec4(pointTransformed, 0.0f, 1.0f);
             glm::vec2 pointScreen = glm::vec2(pointScreen4.x, pointScreen4.y);
 
@@ -270,9 +270,15 @@ void App::updateDraggablePoints() {
                         selectedCurveOffset = mouseWorld - pointTransformed;
                     }
                 }
+                // rotatePoint has less priority than the selected curve, but more priority than regular curve
+                else if (i == 0) {
+                    pickedIdx = i;
+                    minDist = distPixels;
+                    pickedOffset = mouseWorld - pointTransformed;
+                }
                 else {
-                    // Regular point (not from selected curve)
-                    if (distPixels < minDist) {
+                    // Regular point (not sfrom selected curve)
+                    if (pickedIdx != 0 && distPixels < minDist) {
                         pickedIdx = i;
                         minDist = distPixels;
                         pickedOffset = mouseWorld - pointTransformed;
@@ -303,8 +309,14 @@ void App::updateDraggablePoints() {
         glm::vec2 mouseWorld = screenToWorld(mouseX, mouseY);
 
         // Convert mouse position back to original space
-        glm::vec2 newPosTransformed = mouseWorld - dragOffset;
-        *dp.position = transformedToWorld(newPosTransformed);
+        if (draggedPointIdx == 0) {
+            // Rotate point - direct assignment
+            *dp.position = mouseWorld - dragOffset;
+        }
+        else {
+            glm::vec2 newPosTransformed = mouseWorld - dragOffset;
+            *dp.position = transformedToWorld(newPosTransformed);
+        }
 
         if (dp.onUpdate) dp.onUpdate();
     }
