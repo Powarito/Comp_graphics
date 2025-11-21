@@ -118,17 +118,15 @@ void App::initDraggablePoints() {
     draggablePoints.clear();
 
     // Add a pivot point
-    draggablePoints.emplace_back(&rotatePoint, rotatePointColor, [this]() {
+    draggablePoints.emplace_back(&rotatePoint, [this]() {
         updatePointsBuffer();
         });
 
     // Add all the curve control points
     for (std::size_t i = 0; i < contourManager.curves.size(); ++i) {
         for (std::size_t j = 0; j < 4; ++j) {
-            glm::vec3 color = (j == 0 || j == 3) ? glm::vec3{ 1.0f, 0.5f, 0.0f } : glm::vec3{ 0.7f, 0.7f, 0.0f };
             draggablePoints.emplace_back(
                 &contourManager.curves[i]->controlPoints[j],
-                color,
                 [this]() { updateCurvesBuffers(); }
             );
         }

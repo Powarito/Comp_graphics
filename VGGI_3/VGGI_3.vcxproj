@@ -19,23 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
+    <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{9936bd89-9bdf-41be-9e02-b02e8d92b2ba}</ProjectGuid>
-    <RootNamespace>Compgraphics3</RootNamespace>
+    <ProjectGuid>{abc0ddeb-e201-4d11-96df-81c0931ff1e7}</ProjectGuid>
+    <RootNamespace>VGGI3</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -70,11 +70,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\source\repos\Comp_graphics\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\source\repos\Comp_graphics\Libraries\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>D:\source\repos\Comp_graphics\Libraries\source;$(SourcePath)</SourcePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>D:\source\repos\Comp_graphics\Libraries\include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\source\repos\Comp_graphics\Libraries\lib;$(LibraryPath)</LibraryPath>
@@ -90,7 +85,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mtd.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -104,8 +98,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -119,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mtd.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,39 +125,47 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Libraries\include\ImGui\imgui.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="..\Libraries\include\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="..\Libraries\source\auxiliary\Camera.cpp" />
-    <ClCompile Include="..\Libraries\source\auxiliary\Mesh.cpp" />
-    <ClCompile Include="..\Libraries\source\auxiliary\Model.cpp" />
     <ClCompile Include="..\Libraries\source\auxiliary\ShaderProgram.cpp" />
     <ClCompile Include="..\Libraries\source\glad.c" />
-    <ClCompile Include="..\Libraries\source\stb_image.cpp" />
-    <ClCompile Include="CosmicValues.cpp" />
+    <ClCompile Include="core\App3D.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libraries\include\auxiliary\Camera.h" />
-    <ClInclude Include="..\Libraries\include\auxiliary\Mesh.h" />
-    <ClInclude Include="..\Libraries\include\auxiliary\Model.h" />
     <ClInclude Include="..\Libraries\include\auxiliary\ShaderProgram.h" />
-    <ClInclude Include="Cosmic.h" />
-    <ClInclude Include="CosmicValues.h" />
-    <ClInclude Include="Skybox.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imconfig.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imgui.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imgui_internal.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_textedit.h" />
+    <ClInclude Include="..\Libraries\include\ImGui\imstb_truetype.h" />
+    <ClInclude Include="core\App3D.h" />
+    <ClInclude Include="core\Projection.h" />
+    <ClInclude Include="core\Renderer3D.h" />
+    <ClInclude Include="core\Surface.h" />
+    <ClInclude Include="core\SurfaceTexture.h" />
+    <ClInclude Include="geometry\BezierCurve.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\planetShader.frag" />
-    <None Include="res\shaders\planetShader.vert" />
-    <None Include="res\shaders\skyboxShader.frag" />
-    <None Include="res\shaders\skyboxShader.vert" />
-    <None Include="res\shaders\starShader.frag" />
-    <None Include="res\shaders\starShader.vert" />
-    <None Include="res\shaders\stencilShader.frag" />
+    <None Include="resources\shaders\shader3d.frag" />
+    <None Include="resources\shaders\shader3d.vert" />
+    <None Include="resources\shaders\simple.frag" />
+    <None Include="resources\shaders\simple.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

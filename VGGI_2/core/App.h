@@ -93,16 +93,13 @@ private:
     // Draggable Points
     struct DraggablePoint {
         glm::vec2*                  position;
-        glm::vec3                   color;
         std::function<void()>       onUpdate;
 
         DraggablePoint(
             glm::vec2*              position,
-            glm::vec3               color,
             std::function<void()>   callback = nullptr
         )
             : position(position)
-            , color(color)
             , onUpdate(std::move(callback))
         {
         }
